@@ -24,6 +24,8 @@ headers: {
 body: JSON.stringify({
 model: "gpt-4o-mini",
 messages: [{ role: "user", content: prompt }],
+max_tokens: 700,
+temperature: 0.7,
 })
 });
 
