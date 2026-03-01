@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI献立アプリ</title>
+<style>
+body{font-family:-apple-system;padding:15px;background:#f4f6f8;}
+button{width:100%;padding:12px;margin-top:10px;
+border:none;border-radius:8px;background:#4CAF50;color:white;}
+.card{background:white;padding:12px;margin-top:12px;border-radius:10px;}
+textarea,input{width:100%;padding:10px;margin-top:10px;border-radius:8px;border:1px solid #ccc;}
+</style>
+</head>
+<body>
+
+<h1>🤖 AI献立アプリ</h1>
+
+<input id="stock" placeholder="常備食材（例：豚こま,鶏むね,サバ）">
+<input id="budget" placeholder="予算（例：6000）">
+
+<button onclick="generateMenu()">AIで献立生成</button>
+
+<div id="result"></div>
+
+<script>
+
+async function generateMenu(){
+
+const stock=document.getElementById("stock").value;
+const budget=document.getElementById("budget").value||6000;
+
+document.getElementById("result").innerHTML="生成中…🍳";
+
+const response=await fetch("/api/generate",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({stock,budget})
+});
+
+const data=await response.json();
+document.getElementById("result").innerHTML=
+`<div class="card">${data.text.replace(/\n/g,"<br>")}</div>`;
+}
+
+</script>
+
+</body>
+</html>
