@@ -1,6 +1,12 @@
 export default async function handler(req, res) {
   try {
-const prompt = `
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({
+        error: "API key not found"
+      });
+    }
+
+    const prompt = `
 1週間の夕食メニューを箇条書きで出力。
 料理名のみ。
 大人2人と離乳食後期1人。
@@ -18,17 +24,22 @@ const prompt = `
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-　　　　　　max_tokens: 200
-        temperature: 0.5
+        max_tokens: 200
       })
     });
 
     const data = await response.json();
 
-    // 👇 ここが追加ポイント
     if (!response.ok) {
       return res.status(response.status).json({
         error: "OpenAI API Error",
+        details: data
+      });
+    }
+
+    if (!data.choices || !data.choices[0]) {
+      return res.status(500).json({
+        error: "Invalid OpenAI response",
         details: data
       });
     }
@@ -37,7 +48,10 @@ const prompt = `
       result: data.choices[0].message.content
     });
 
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+  } catch (err) {
+    return res.status(500).json({
+      error: "Function crashed",
+      message: err.message
+    });
   }
 }
