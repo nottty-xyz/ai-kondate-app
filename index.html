@@ -209,8 +209,12 @@ function generate(){
     html+="</div>";
 
     ingredients.forEach(i=>{
-      if(!stock.includes(i)) shopping.add(i);
-    });
+  const ingTrim = i.trim();        // 空白除去
+  const stockTrim = stock.map(s => s.trim()); // 常備菜もトリム
+  if(!stockTrim.includes(ingTrim)){
+    shopping.add(ingTrim);
+  }
+});
   });
 
   html+=`<div class="card"><strong>🛒 買い物リスト</strong><br>`;
