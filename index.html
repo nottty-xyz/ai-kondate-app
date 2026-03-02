@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>献立アプリ</title>
+<title>献立アプリ（離乳食対応）</title>
 
 <style>
 body {
@@ -61,7 +61,7 @@ button {
 </head>
 <body>
 
-<h1>🍚 1週間献立</h1>
+<h1>🍚 1週間献立（離乳食対応）</h1>
 
 <label>👶 離乳食フェーズ</label>
 <select id="phase">
@@ -70,9 +70,6 @@ button {
   <option value="後期" selected>後期</option>
   <option value="完了期">完了期</option>
 </select>
-
-<label>💰 予算（円）</label>
-<input type="number" id="budget" placeholder="6000">
 
 <label>🥬 常備食材（カンマ区切り）</label>
 <textarea id="stock" rows="2" placeholder="豚こま, 鶏むね, 玉ねぎ"></textarea>
@@ -93,10 +90,79 @@ button {
 <div id="result"></div>
 
 <script>
+/* 👶 離乳食フェーズ別許可食材 */
+const allowedFoods = {
+  初期: [
+    "米","食パン","ロールパン","うどん","そうめん","じゃがいも","さつまいも",
+    "豆腐","お麩","きなこ","卵の黄身","ヨーグルト","白身魚","しらす","にんじん",
+    "大根","かぶ","とまと","とうもろこし","かぼちゃ","きゅうり","なす","小松菜",
+    "ほうれん草","白菜","キャベツ","ブロッコリー","カリフラワー","レタス",
+    "ちんげん菜","玉ねぎ","りんご","いちご","メロン","バナナ","すいか","梨",
+    "みかん","桃","片栗粉"
+  ],
+  中期: [
+    // 初期食材 + 中期追加
+    "米","食パン","ロールパン","うどん","そうめん","じゃがいも","さつまいも",
+    "豆腐","お麩","きなこ","卵の黄身","ヨーグルト","白身魚","しらす","にんじん",
+    "大根","かぶ","とまと","とうもろこし","かぼちゃ","きゅうり","なす","小松菜",
+    "ほうれん草","白菜","キャベツ","ブロッコリー","カリフラワー","レタス",
+    "ちんげん菜","玉ねぎ","りんご","いちご","メロン","バナナ","すいか","梨",
+    "みかん","桃","片栗粉",
+    "コーンフレーク","パスタ","里芋","山芋","納豆","高野豆腐","粉チーズ","鮭",
+    "かつお","ぶり","まぐろ","めかじき","削り節","鶏ささみ","鶏ひき","鶏もも",
+    "鶏むね","鶏レバ","豚レバ","牛レバ","ツナ水煮","おくら","えんどう","ズッキーニ",
+    "インゲン","パプリカ","ピーマン","アスパラ","ねぎ","にら","キウイ","ぶどう",
+    "焼き海苔","青のり","砂糖","バター","マーガリン","サラダ油","ごま油","オリーブオイル"
+  ],
+  後期: [
+    // 初期+中期+後期追加
+    "米","食パン","ロールパン","うどん","そうめん","じゃがいも","さつまいも",
+    "豆腐","お麩","きなこ","卵の黄身","ヨーグルト","白身魚","しらす","にんじん",
+    "大根","かぶ","とまと","とうもろこし","かぼちゃ","きゅうり","なす","小松菜",
+    "ほうれん草","白菜","キャベツ","ブロッコリー","カリフラワー","レタス",
+    "ちんげん菜","玉ねぎ","りんご","いちご","メロン","バナナ","すいか","梨",
+    "みかん","桃","片栗粉",
+    "コーンフレーク","パスタ","里芋","山芋","納豆","高野豆腐","粉チーズ","鮭",
+    "かつお","ぶり","まぐろ","めかじき","削り節","鶏ささみ","鶏ひき","鶏もも",
+    "鶏むね","鶏レバ","豚レバ","牛レバ","ツナ水煮","おくら","えんどう","ズッキーニ",
+    "インゲン","パプリカ","ピーマン","アスパラ","ねぎ","にら","キウイ","ぶどう",
+    "焼き海苔","青のり","砂糖","バター","マーガリン","サラダ油","ごま油","オリーブオイル",
+    "ホットケーキミックス","バゲット","胚芽入りパン","イングリッシュマフィン",
+    "中華麺","プロセスチーズ","あじ","さば","いわし","さわら","金目鯛","さんま",
+    "銀鱈","かき","えび","かに","豚ひき","豚もも","豚ロース","牛ひき","牛赤身",
+    "ごぼう","れんこん","ゴーヤ","もやし","しそ","きのこ","グレープフルーツ",
+    "アボカド","ブルーベリー","ラズベリー","寒天","めかぶ","もずく","ひじき",
+    "切干大根","味噌","みりん","マヨネーズ","パン粉","しょうゆ","塩"
+  ],
+  完了期: [
+    // 初期+中期+後期+完了期追加
+    "米","食パン","ロールパン","うどん","そうめん","じゃがいも","さつまいも",
+    "豆腐","お麩","きなこ","卵の黄身","ヨーグルト","白身魚","しらす","にんじん",
+    "大根","かぶ","とまと","とうもろこし","かぼちゃ","きゅうり","なす","小松菜",
+    "ほうれん草","白菜","キャベツ","ブロッコリー","カリフラワー","レタス",
+    "ちんげん菜","玉ねぎ","りんご","いちご","メロン","バナナ","すいか","梨",
+    "みかん","桃","片栗粉",
+    "コーンフレーク","パスタ","里芋","山芋","納豆","高野豆腐","粉チーズ","鮭",
+    "かつお","ぶり","まぐろ","めかじき","削り節","鶏ささみ","鶏ひき","鶏もも",
+    "鶏むね","鶏レバ","豚レバ","牛レバ","ツナ水煮","おくら","えんどう","ズッキーニ",
+    "インゲン","パプリカ","ピーマン","アスパラ","ねぎ","にら","キウイ","ぶどう",
+    "焼き海苔","青のり","砂糖","バター","マーガリン","サラダ油","ごま油","オリーブオイル",
+    "ホットケーキミックス","バゲット","胚芽入りパン","イングリッシュマフィン",
+    "中華麺","プロセスチーズ","あじ","さば","いわし","さわら","金目鯛","さんま",
+    "銀鱈","かき","えび","かに","豚ひき","豚もも","豚ロース","牛ひき","牛赤身",
+    "ごぼう","れんこん","ゴーヤ","もやし","しそ","きのこ","グレープフルーツ",
+    "アボカド","ブルーベリー","ラズベリー","寒天","めかぶ","もずく","ひじき",
+    "切干大根","味噌","みりん","マヨネーズ","パン粉","しょうゆ","塩",
+    "玄米","ライ麦パン","蒸しパン","ナン","グラノーラ","油揚げ","厚揚げ",
+    "おから","がんも","生クリーム","あさりしじみ","たらこ","練り物","干物",
+    "ハム","ウインナー","焼き豚","栗","たけのこ","貝割れ大根","マッシュルーム",
+    "パイン","なめこ","味のり","ウスターソース","ケチャップ","カレー粉",
+    "大人出汁","鶏ガラ","コンソメ","オイスターソース"
+  ]
+};
 
-function shuffle(arr){
-  return arr.sort(()=>Math.random()-0.5);
-}
+/* 🍳 生成処理 */
+function shuffle(arr){ return arr.sort(()=>Math.random()-0.5); }
 
 function babyGuide(phase){
   switch(phase){
@@ -108,133 +174,49 @@ function babyGuide(phase){
 }
 
 function ngCheck(phase, ingredients){
-  const ngFoods = {
-    初期:["塩","醤油","味噌","はちみつ"],
-    中期:["はちみつ"],
-    後期:["はちみつ"],
-    完了期:[]
-  };
-  return ingredients.filter(i => ngFoods[phase].includes(i));
-}
-
-/* 🛒 食材価格 */
-const priceTable = {
-  豚こま:300,
-  鶏むね:250,
-  サバ:300,
-  玉ねぎ:100,
-  小松菜:150,
-  卵:250,
-  パスタ:200,
-  きのこ:200,
-  ベーコン:300,
-  味噌:200,
-  醤油:150,
-  みりん:150,
-  塩:50,
-  生姜:100,
-  酢:150
-};
-
-function calcCost(ingredients, stock){
-  let cost=0;
-  ingredients.forEach(i=>{
-    if(!stock.includes(i)){
-      cost += priceTable[i] || 200;
-    }
-  });
-  return cost;
+  if(phase==="完了期") return [];
+  return ingredients.filter(i => !allowedFoods[phase].includes(i));
 }
 
 function generate(){
-
   const phase = document.getElementById("phase").value;
-  const budget = Number(document.getElementById("budget").value);
-  const stock = document.getElementById("stock").value
-    .split(",").map(s=>s.trim()).filter(Boolean);
+  const stock = document.getElementById("stock").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const raw = document.getElementById("recipes").value.split("\n").map(r=>r.trim()).filter(Boolean);
 
-  const raw = document.getElementById("recipes").value
-    .split("\n").map(r=>r.trim()).filter(Boolean);
+  if(raw.length<7){ alert("7メニュー以上入力してね！"); return; }
 
-  if(raw.length < 7){
-    alert("7メニュー以上入れてね！");
-    return;
-  }
-
-  /* 各メニューのコスト計算 */
-  let menus = raw.map(line=>{
-    const [name, ingStr] = line.split("｜");
-    const ingredients = ingStr.split(",").map(s=>s.trim());
-    const cost = calcCost(ingredients, stock);
-    return {name, ingredients, cost};
-  });
-
-  /* 安い順に並び替え */
-  menus.sort((a,b)=>a.cost-b.cost);
-
-  let selected=[];
-  let total=0;
-
-  for(let menu of menus){
-    if(selected.length<7){
-      if(!budget || total+menu.cost<=budget){
-        selected.push(menu);
-        total+=menu.cost;
-      }
-    }
-  }
-
-  /* 足りなかったら安い順で埋める（予算無視） */
-  while(selected.length<7){
-    selected.push(menus[selected.length]);
-  }
-
+  const shuffled = shuffle([...raw]);
   const days=["月","火","水","木","金","土","日"];
-  let html="";
-  let shopping=new Set();
+  let html="", shopping=new Set();
 
-  selected.forEach((menu,i)=>{
+  days.forEach((day,i)=>{
+    const [name, ingStr] = shuffled[i].split("｜");
+    const ingredients = ingStr.split(",").map(s=>s.trim());
 
     html+=`<div class="card">
       <strong>${days[i]}曜日</strong><br>
-      🍽 ${menu.name}<br>
-      👶 ${babyGuide(phase)}<br>
-      💰 約${menu.cost}円`;
+      🍽 ${name}<br>
+      👶 ${babyGuide(phase)}
+    `;
 
-    const ng = ngCheck(phase, menu.ingredients);
+    const ng = ngCheck(phase, ingredients);
     if(ng.length>0){
       html+=`<div class="warn">⚠ NG食材: ${ng.join(",")}</div>`;
     }
 
-    html+=`</div>`;
+    html+="</div>";
 
-    menu.ingredients.forEach(i=>{
-      if(!stock.includes(i)){
-        shopping.add(i);
-      }
+    ingredients.forEach(i=>{
+      if(!stock.includes(i)) shopping.add(i);
     });
   });
 
   html+=`<div class="card"><strong>🛒 買い物リスト</strong><br>`;
-  shopping.forEach(i=>{
-    html+=`・${i}<br>`;
-  });
-  html+=`<br><strong>合計目安：${total}円</strong>`;
-
-  if(budget){
-    if(total>budget){
-      html+=`<div class="warn">⚠ 完全には収まりませんでした</div>`;
-    } else {
-      html+=`<div style="color:green;">✔ 予算内に自動調整済み</div>`;
-    }
-  }
-
-  html+=`</div>`;
+  shopping.forEach(i=>{ html+=`・${i}<br>`; });
+  html+="</div>";
 
   document.getElementById("result").innerHTML=html;
 }
-
 </script>
-
 </body>
 </html>
