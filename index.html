@@ -32,11 +32,7 @@ const budget=document.getElementById("budget").value||6000;
 
 document.getElementById("result").innerHTML="生成中…🍳";
 
-const response=await fetch("/api/generate",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({stock,budget})
-});
+
 
 const data=await response.json();
 document.getElementById("result").innerHTML=
