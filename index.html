@@ -5,77 +5,91 @@
 <title>1週間献立アプリ</title>
 <style>
 body { font-family: sans-serif; padding: 20px; }
+input, textarea { width: 100%; margin: 5px 0 15px; padding: 8px; }
 button { padding: 10px 20px; margin: 10px 0; }
 .card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
-details { margin-top: 5px; }
+.small { font-size: 12px; color: gray; }
 </style>
 </head>
 <body>
 
 <h1>🍚 1週間夕飯献立</h1>
+
+<label>💰 1週間の予算（円）</label>
+<input type="number" id="budget" placeholder="例：6000">
+
+<label>🥬 常備菜・家にあるもの（カンマ区切り）</label>
+<textarea id="stock" rows="2" placeholder="例：豚こま, 鶏むね, 小松菜"></textarea>
+
+<label>🍳 ローテーションレシピ（1行1メニュー）</label>
+<textarea id="recipes" rows="6">
+豚こまと玉ねぎの甘辛炒め
+鶏むねの照り焼き
+サバの味噌煮
+きのこパスタ
+小松菜と豚肉の炒め物
+チキン南蛮風
+サバの塩焼き
+</textarea>
+
 <button onclick="generate()">献立を作る</button>
+
 <div id="result"></div>
 
 <script>
-
-const mains = [
-"豚こまと玉ねぎの甘辛炒め",
-"鶏むねの照り焼き",
-"サバの味噌煮",
-"きのこたっぷり和風パスタ",
-"小松菜と豚肉のオイスター炒め",
-"鶏むねのチキン南蛮風",
-"サバの塩焼き"
-];
-
-const sides = [
-"小松菜のおひたし",
-"きのこスープ",
-"玉ねぎ味噌汁",
-"ポテトサラダ",
-"冷ややっこ",
-"人参しりしり",
-"ほうれん草ごま和え"
-];
 
 function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
 
 function generate() {
+  const budget = document.getElementById("budget").value;
+  const stockInput = document.getElementById("stock").value;
+  const recipesInput = document.getElementById("recipes").value;
+
+  const stock = stockInput.split(",").map(s => s.trim()).filter(Boolean);
+  const recipes = recipesInput.split("\n").map(r => r.trim()).filter(Boolean);
+
+  if (recipes.length < 7) {
+    alert("レシピは7個以上入力してね！");
+    return;
+  }
+
   const days = ["月","火","水","木","金","土","日"];
-  const shuffledMains = shuffle([...mains]);
-  const shuffledSides = shuffle([...sides]);
+  const shuffled = shuffle([...recipes]);
 
   let html = "";
   let shopping = new Set();
 
   days.forEach((day, i) => {
-    const main = shuffledMains[i % mains.length];
-    const side = shuffledSides[i % sides.length];
-
-    shopping.add(main);
-    shopping.add(side);
+    const dish = shuffled[i % shuffled.length];
 
     html += `
       <div class="card">
         <strong>${day}曜日</strong><br>
-        メイン：${main}<br>
-        副菜：${side}
-
-        <details>
-          <summary>ざっくりレシピを見る</summary>
-          フライパンで炒めて味付けするだけ。<br>
-          離乳食は薄味に取り分けて刻む。
-        </details>
+        ${dish}
       </div>
     `;
+
+    // 材料ざっくり抽出（料理名から単語分解）
+    dish.split("の").forEach(word => {
+      if (!stock.includes(word.trim())) {
+        shopping.add(word.trim());
+      }
+    });
   });
 
-  html += `<h3>🛒 買い物メモ</h3>`;
+  html += `<h3>🛒 買い物リスト</h3>`;
+
   shopping.forEach(item => {
-    html += `・${item}<br>`;
+    if (item) {
+      html += `・${item}<br>`;
+    }
   });
+
+  if (budget) {
+    html += `<p class="small">※ 予算目安：${budget}円以内で調整してください</p>`;
+  }
 
   document.getElementById("result").innerHTML = html;
 }
