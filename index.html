@@ -2,41 +2,82 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI献立アプリ</title>
+<title>1週間献立アプリ</title>
 <style>
-body{font-family:-apple-system;padding:15px;background:#f4f6f8;}
-button{width:100%;padding:12px;margin-top:10px;
-border:none;border-radius:8px;background:#4CAF50;color:white;}
-.card{background:white;padding:12px;margin-top:12px;border-radius:10px;}
-textarea,input{width:100%;padding:10px;margin-top:10px;border-radius:8px;border:1px solid #ccc;}
+body { font-family: sans-serif; padding: 20px; }
+button { padding: 10px 20px; margin: 10px 0; }
+.card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+details { margin-top: 5px; }
 </style>
 </head>
 <body>
 
-<h1>🤖 AI献立アプリ</h1>
-
-<input id="stock" placeholder="常備食材（例：豚こま,鶏むね,サバ）">
-<input id="budget" placeholder="予算（例：6000）">
-
-<button onclick="generateMenu()">AIで献立生成</button>
-
+<h1>🍚 1週間夕飯献立</h1>
+<button onclick="generate()">献立を作る</button>
 <div id="result"></div>
 
 <script>
 
-async function generateMenu(){
+const mains = [
+"豚こまと玉ねぎの甘辛炒め",
+"鶏むねの照り焼き",
+"サバの味噌煮",
+"きのこたっぷり和風パスタ",
+"小松菜と豚肉のオイスター炒め",
+"鶏むねのチキン南蛮風",
+"サバの塩焼き"
+];
 
-const stock=document.getElementById("stock").value;
-const budget=document.getElementById("budget").value||6000;
+const sides = [
+"小松菜のおひたし",
+"きのこスープ",
+"玉ねぎ味噌汁",
+"ポテトサラダ",
+"冷ややっこ",
+"人参しりしり",
+"ほうれん草ごま和え"
+];
 
-document.getElementById("result").innerHTML="生成中…🍳";
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
 
+function generate() {
+  const days = ["月","火","水","木","金","土","日"];
+  const shuffledMains = shuffle([...mains]);
+  const shuffledSides = shuffle([...sides]);
 
+  let html = "";
+  let shopping = new Set();
 
-const data=await response.json();
-document.getElementById("result").innerHTML=
-`<div class="card">${data.text.replace(/\n/g,"<br>")}</div>`;
+  days.forEach((day, i) => {
+    const main = shuffledMains[i % mains.length];
+    const side = shuffledSides[i % sides.length];
+
+    shopping.add(main);
+    shopping.add(side);
+
+    html += `
+      <div class="card">
+        <strong>${day}曜日</strong><br>
+        メイン：${main}<br>
+        副菜：${side}
+
+        <details>
+          <summary>ざっくりレシピを見る</summary>
+          フライパンで炒めて味付けするだけ。<br>
+          離乳食は薄味に取り分けて刻む。
+        </details>
+      </div>
+    `;
+  });
+
+  html += `<h3>🛒 買い物メモ</h3>`;
+  shopping.forEach(item => {
+    html += `・${item}<br>`;
+  });
+
+  document.getElementById("result").innerHTML = html;
 }
 
 </script>
