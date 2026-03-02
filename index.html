@@ -1,3 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>献立アプリ</title>
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  padding: 16px 16px 90px;
+  background: #f4f6f8;
+}
+
+h1 {
+  font-size: 22px;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0 16px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+}
+
+button {
+  position: fixed;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+  border-radius: 16px;
+  background: #2e7d32;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.card {
+  background: white;
+  padding: 14px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+.warn {
+  color: red;
+  font-size: 13px;
+}
+
+.small {
+  font-size: 13px;
+  color: gray;
+}
+</style>
+</head>
+<body>
+
+<h1>🍚 1週間献立</h1>
+
+<label>👶 離乳食フェーズ</label>
+<select id="phase">
+  <option value="初期">初期</option>
+  <option value="中期">中期</option>
+  <option value="後期" selected>後期</option>
+  <option value="完了期">完了期</option>
+</select>
+
+<label>💰 予算（円）</label>
+<input type="number" id="budget" placeholder="6000">
+
+<label>🥬 常備食材（カンマ区切り）</label>
+<textarea id="stock" rows="2" placeholder="豚こま, 鶏むね, 玉ねぎ"></textarea>
+
+<label>🍳 メニューと食材（形式：料理名｜食材1,食材2）</label>
+<textarea id="recipes" rows="7">
+豚こま炒め｜豚こま,玉ねぎ
+鶏照り焼き｜鶏むね,醤油,みりん
+サバ味噌煮｜サバ,味噌,生姜
+きのこパスタ｜パスタ,きのこ,ベーコン
+小松菜炒め｜小松菜,豚こま
+チキン南蛮｜鶏むね,卵,酢
+サバ塩焼き｜サバ,塩
+</textarea>
+
+<button onclick="generate()">献立生成</button>
+
+<div id="result"></div>
+
 <script>
 
 function shuffle(arr){
@@ -141,3 +235,6 @@ function generate(){
 }
 
 </script>
+
+</body>
+</html>
