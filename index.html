@@ -2,23 +2,75 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>1週間献立アプリ</title>
+
 <style>
-body { font-family: sans-serif; padding: 20px; }
-input, textarea { width: 100%; margin: 5px 0 15px; padding: 8px; }
-button { padding: 10px 20px; margin: 10px 0; }
-.card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
-.small { font-size: 12px; color: gray; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 16px;
+  margin: 0;
+  background: #f9f9f9;
+}
+
+h1 {
+  font-size: 22px;
+}
+
+label {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  background: #4CAF50;
+  color: white;
+}
+
+.card {
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  margin: 10px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.small {
+  font-size: 13px;
+  color: gray;
+}
 </style>
 </head>
 <body>
 
 <h1>🍚 1週間夕飯献立</h1>
 
+<label>👶 離乳食フェーズ</label>
+<select id="babyPhase">
+  <option value="初期">初期</option>
+  <option value="中期">中期</option>
+  <option value="後期" selected>後期</option>
+  <option value="完了期">完了期</option>
+</select>
+
 <label>💰 1週間の予算（円）</label>
 <input type="number" id="budget" placeholder="例：6000">
 
-<label>🥬 常備菜・家にあるもの（カンマ区切り）</label>
+<label>🥬 常備食材（カンマ区切り）</label>
 <textarea id="stock" rows="2" placeholder="例：豚こま, 鶏むね, 小松菜"></textarea>
 
 <label>🍳 ローテーションレシピ（1行1メニュー）</label>
@@ -42,7 +94,21 @@ function shuffle(array) {
   return array.sort(() => Math.random() - 0.5);
 }
 
+function babyGuide(phase) {
+  switch (phase) {
+    case "初期":
+      return "→ 食材をすりつぶしてポタージュ状に";
+    case "中期":
+      return "→ 5mm角に刻んでやわらかく煮る";
+    case "後期":
+      return "→ 1cm角でやわらかく、薄味で取り分け";
+    case "完了期":
+      return "→ ほぼ大人と同じ、薄味で";
+  }
+}
+
 function generate() {
+  const phase = document.getElementById("babyPhase").value;
   const budget = document.getElementById("budget").value;
   const stockInput = document.getElementById("stock").value;
   const recipesInput = document.getElementById("recipes").value;
@@ -62,16 +128,16 @@ function generate() {
   let shopping = new Set();
 
   days.forEach((day, i) => {
-    const dish = shuffled[i % shuffled.length];
+    const dish = shuffled[i];
 
     html += `
       <div class="card">
         <strong>${day}曜日</strong><br>
-        ${dish}
+        🍽 ${dish}<br>
+        👶 ${babyGuide(phase)}
       </div>
     `;
 
-    // 材料ざっくり抽出（料理名から単語分解）
     dish.split("の").forEach(word => {
       if (!stock.includes(word.trim())) {
         shopping.add(word.trim());
@@ -79,13 +145,11 @@ function generate() {
     });
   });
 
-  html += `<h3>🛒 買い物リスト</h3>`;
-
+  html += `<div class="card"><strong>🛒 買い物リスト</strong><br>`;
   shopping.forEach(item => {
-    if (item) {
-      html += `・${item}<br>`;
-    }
+    if (item) html += `・${item}<br>`;
   });
+  html += `</div>`;
 
   if (budget) {
     html += `<p class="small">※ 予算目安：${budget}円以内で調整してください</p>`;
