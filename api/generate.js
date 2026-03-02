@@ -1,15 +1,12 @@
 export default async function handler(req, res) {
   try {
-    const prompt = `
-大人2人と離乳食後期1人の1週間夕食献立を作成。
+const prompt = `
+1週間の夕食メニューを箇条書きで出力。
+料理名のみ。
+大人2人と離乳食後期1人。
 予算6000円以内。
-調理30分以内。
+30分以内。
 常備：豚こま、鶏むね、サバ、小松菜。
-出力：
-1. 曜日ごとの献立
-2. 簡単レシピ（3行以内）
-3. 離乳食取り分け
-4. 買い物リストまとめ
 `;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -21,8 +18,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 700,
-        temperature: 0.7
+　　　　　　max_tokens: 200
+        temperature: 0.5
       })
     });
 
