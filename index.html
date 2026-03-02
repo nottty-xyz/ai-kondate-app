@@ -3,50 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1週間献立アプリ</title>
+<title>献立アプリ</title>
 
 <style>
 body {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  padding: 16px;
   margin: 0;
-  background: #f9f9f9;
+  padding: 16px 16px 90px;
+  background: #f4f6f8;
 }
 
 h1 {
   font-size: 22px;
 }
 
-label {
-  font-weight: bold;
-  font-size: 14px;
-}
-
 input, textarea, select {
   width: 100%;
-  padding: 10px;
-  margin: 5px 0 15px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  padding: 12px;
+  margin: 6px 0 16px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
   font-size: 16px;
 }
 
 button {
-  width: 100%;
-  padding: 14px;
+  position: fixed;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  padding: 16px;
   font-size: 16px;
   border: none;
-  border-radius: 10px;
-  background: #4CAF50;
+  border-radius: 16px;
+  background: #2e7d32;
   color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
 .card {
   background: white;
-  padding: 12px;
-  border-radius: 10px;
-  margin: 10px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 14px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+.warn {
+  color: red;
+  font-size: 13px;
 }
 
 .small {
@@ -57,105 +61,117 @@ button {
 </head>
 <body>
 
-<h1>🍚 1週間夕飯献立</h1>
+<h1>🍚 1週間献立</h1>
 
 <label>👶 離乳食フェーズ</label>
-<select id="babyPhase">
+<select id="phase">
   <option value="初期">初期</option>
   <option value="中期">中期</option>
   <option value="後期" selected>後期</option>
   <option value="完了期">完了期</option>
 </select>
 
-<label>💰 1週間の予算（円）</label>
-<input type="number" id="budget" placeholder="例：6000">
+<label>💰 予算（円）</label>
+<input type="number" id="budget" placeholder="6000">
 
 <label>🥬 常備食材（カンマ区切り）</label>
-<textarea id="stock" rows="2" placeholder="例：豚こま, 鶏むね, 小松菜"></textarea>
+<textarea id="stock" rows="2" placeholder="豚こま, 鶏むね, 玉ねぎ"></textarea>
 
-<label>🍳 ローテーションレシピ（1行1メニュー）</label>
-<textarea id="recipes" rows="6">
-豚こまと玉ねぎの甘辛炒め
-鶏むねの照り焼き
-サバの味噌煮
-きのこパスタ
-小松菜と豚肉の炒め物
-チキン南蛮風
-サバの塩焼き
+<label>🍳 メニューと食材（形式：料理名｜食材1,食材2）</label>
+<textarea id="recipes" rows="7">
+豚こま炒め｜豚こま,玉ねぎ
+鶏照り焼き｜鶏むね,醤油,みりん
+サバ味噌煮｜サバ,味噌,生姜
+きのこパスタ｜パスタ,きのこ,ベーコン
+小松菜炒め｜小松菜,豚こま
+チキン南蛮｜鶏むね,卵,酢
+サバ塩焼き｜サバ,塩
 </textarea>
 
-<button onclick="generate()">献立を作る</button>
+<button onclick="generate()">献立生成</button>
 
 <div id="result"></div>
 
 <script>
 
-function shuffle(array) {
-  return array.sort(() => Math.random() - 0.5);
+function shuffle(arr){
+  return arr.sort(()=>Math.random()-0.5);
 }
 
-function babyGuide(phase) {
-  switch (phase) {
-    case "初期":
-      return "→ 食材をすりつぶしてポタージュ状に";
-    case "中期":
-      return "→ 5mm角に刻んでやわらかく煮る";
-    case "後期":
-      return "→ 1cm角でやわらかく、薄味で取り分け";
-    case "完了期":
-      return "→ ほぼ大人と同じ、薄味で";
+function babyGuide(phase){
+  switch(phase){
+    case "初期": return "すりつぶしてペースト状";
+    case "中期": return "5mm角でやわらかく";
+    case "後期": return "1cm角・薄味取り分け";
+    case "完了期": return "ほぼ大人と同じ薄味";
   }
 }
 
-function generate() {
-  const phase = document.getElementById("babyPhase").value;
+function ngCheck(phase, ingredients){
+  const ngFoods = {
+    初期:["塩","醤油","味噌","はちみつ"],
+    中期:["はちみつ"],
+    後期:["はちみつ"],
+    完了期:[]
+  };
+  return ingredients.filter(i => ngFoods[phase].includes(i));
+}
+
+function generate(){
+
+  const phase = document.getElementById("phase").value;
   const budget = document.getElementById("budget").value;
-  const stockInput = document.getElementById("stock").value;
-  const recipesInput = document.getElementById("recipes").value;
+  const stock = document.getElementById("stock").value
+    .split(",").map(s=>s.trim()).filter(Boolean);
 
-  const stock = stockInput.split(",").map(s => s.trim()).filter(Boolean);
-  const recipes = recipesInput.split("\n").map(r => r.trim()).filter(Boolean);
+  const raw = document.getElementById("recipes").value
+    .split("\n").map(r=>r.trim()).filter(Boolean);
 
-  if (recipes.length < 7) {
-    alert("レシピは7個以上入力してね！");
+  if(raw.length < 7){
+    alert("7メニュー以上入れてね！");
     return;
   }
 
-  const days = ["月","火","水","木","金","土","日"];
-  const shuffled = shuffle([...recipes]);
+  const days=["月","火","水","木","金","土","日"];
+  const shuffled = shuffle([...raw]);
 
-  let html = "";
-  let shopping = new Set();
+  let html="";
+  let shopping=new Set();
 
-  days.forEach((day, i) => {
-    const dish = shuffled[i];
+  days.forEach((day,i)=>{
+    const [name, ingStr] = shuffled[i].split("｜");
+    const ingredients = ingStr.split(",").map(s=>s.trim());
 
-    html += `
-      <div class="card">
-        <strong>${day}曜日</strong><br>
-        🍽 ${dish}<br>
-        👶 ${babyGuide(phase)}
-      </div>
-    `;
+    html+=`<div class="card">
+      <strong>${day}曜日</strong><br>
+      🍽 ${name}<br>
+      👶 ${babyGuide(phase)}<br>`;
 
-    dish.split("の").forEach(word => {
-      if (!stock.includes(word.trim())) {
-        shopping.add(word.trim());
+    const ng = ngCheck(phase, ingredients);
+    if(ng.length>0){
+      html+=`<div class="warn">⚠ NG食材: ${ng.join(",")}</div>`;
+    }
+
+    html+=`</div>`;
+
+    ingredients.forEach(i=>{
+      if(!stock.includes(i)){
+        shopping.add(i);
       }
     });
   });
 
-  html += `<div class="card"><strong>🛒 買い物リスト</strong><br>`;
-  shopping.forEach(item => {
-    if (item) html += `・${item}<br>`;
+  html+=`<div class="card"><strong>🛒 買い物リスト</strong><br>`;
+  shopping.forEach(i=>{
+    html+=`・${i}<br>`;
   });
-  html += `</div>`;
+  html+=`</div>`;
 
-  if (budget) {
-    html += `<p class="small">※ 予算目安：${budget}円以内で調整してください</p>`;
+  if(budget){
+    html+=`<p class="small">※ 目安予算 ${budget}円</p>`;
   }
 
-  document.getElementById("result").innerHTML = html;
+  document.getElementById("result").innerHTML=html;
 }
 
 </script>
