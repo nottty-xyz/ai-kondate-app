@@ -1,97 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>献立アプリ</title>
-
-<style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  margin: 0;
-  padding: 16px 16px 90px;
-  background: #f4f6f8;
-}
-
-h1 {
-  font-size: 22px;
-}
-
-input, textarea, select {
-  width: 100%;
-  padding: 12px;
-  margin: 6px 0 16px;
-  border-radius: 12px;
-  border: 1px solid #ddd;
-  font-size: 16px;
-}
-
-button {
-  position: fixed;
-  bottom: 20px;
-  left: 16px;
-  right: 16px;
-  padding: 16px;
-  font-size: 16px;
-  border: none;
-  border-radius: 16px;
-  background: #2e7d32;
-  color: white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-}
-
-.card {
-  background: white;
-  padding: 14px;
-  border-radius: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-}
-
-.warn {
-  color: red;
-  font-size: 13px;
-}
-
-.small {
-  font-size: 13px;
-  color: gray;
-}
-</style>
-</head>
-<body>
-
-<h1>🍚 1週間献立</h1>
-
-<label>👶 離乳食フェーズ</label>
-<select id="phase">
-  <option value="初期">初期</option>
-  <option value="中期">中期</option>
-  <option value="後期" selected>後期</option>
-  <option value="完了期">完了期</option>
-</select>
-
-<label>💰 予算（円）</label>
-<input type="number" id="budget" placeholder="6000">
-
-<label>🥬 常備食材（カンマ区切り）</label>
-<textarea id="stock" rows="2" placeholder="豚こま, 鶏むね, 玉ねぎ"></textarea>
-
-<label>🍳 メニューと食材（形式：料理名｜食材1,食材2）</label>
-<textarea id="recipes" rows="7">
-豚こま炒め｜豚こま,玉ねぎ
-鶏照り焼き｜鶏むね,醤油,みりん
-サバ味噌煮｜サバ,味噌,生姜
-きのこパスタ｜パスタ,きのこ,ベーコン
-小松菜炒め｜小松菜,豚こま
-チキン南蛮｜鶏むね,卵,酢
-サバ塩焼き｜サバ,塩
-</textarea>
-
-<button onclick="generate()">献立生成</button>
-
-<div id="result"></div>
-
 <script>
 
 function shuffle(arr){
@@ -117,10 +23,39 @@ function ngCheck(phase, ingredients){
   return ingredients.filter(i => ngFoods[phase].includes(i));
 }
 
+/* 🛒 食材価格 */
+const priceTable = {
+  豚こま:300,
+  鶏むね:250,
+  サバ:300,
+  玉ねぎ:100,
+  小松菜:150,
+  卵:250,
+  パスタ:200,
+  きのこ:200,
+  ベーコン:300,
+  味噌:200,
+  醤油:150,
+  みりん:150,
+  塩:50,
+  生姜:100,
+  酢:150
+};
+
+function calcCost(ingredients, stock){
+  let cost=0;
+  ingredients.forEach(i=>{
+    if(!stock.includes(i)){
+      cost += priceTable[i] || 200;
+    }
+  });
+  return cost;
+}
+
 function generate(){
 
   const phase = document.getElementById("phase").value;
-  const budget = document.getElementById("budget").value;
+  const budget = Number(document.getElementById("budget").value);
   const stock = document.getElementById("stock").value
     .split(",").map(s=>s.trim()).filter(Boolean);
 
@@ -132,29 +67,54 @@ function generate(){
     return;
   }
 
-  const days=["月","火","水","木","金","土","日"];
-  const shuffled = shuffle([...raw]);
+  /* 各メニューのコスト計算 */
+  let menus = raw.map(line=>{
+    const [name, ingStr] = line.split("｜");
+    const ingredients = ingStr.split(",").map(s=>s.trim());
+    const cost = calcCost(ingredients, stock);
+    return {name, ingredients, cost};
+  });
 
+  /* 安い順に並び替え */
+  menus.sort((a,b)=>a.cost-b.cost);
+
+  let selected=[];
+  let total=0;
+
+  for(let menu of menus){
+    if(selected.length<7){
+      if(!budget || total+menu.cost<=budget){
+        selected.push(menu);
+        total+=menu.cost;
+      }
+    }
+  }
+
+  /* 足りなかったら安い順で埋める（予算無視） */
+  while(selected.length<7){
+    selected.push(menus[selected.length]);
+  }
+
+  const days=["月","火","水","木","金","土","日"];
   let html="";
   let shopping=new Set();
 
-  days.forEach((day,i)=>{
-    const [name, ingStr] = shuffled[i].split("｜");
-    const ingredients = ingStr.split(",").map(s=>s.trim());
+  selected.forEach((menu,i)=>{
 
     html+=`<div class="card">
-      <strong>${day}曜日</strong><br>
-      🍽 ${name}<br>
-      👶 ${babyGuide(phase)}<br>`;
+      <strong>${days[i]}曜日</strong><br>
+      🍽 ${menu.name}<br>
+      👶 ${babyGuide(phase)}<br>
+      💰 約${menu.cost}円`;
 
-    const ng = ngCheck(phase, ingredients);
+    const ng = ngCheck(phase, menu.ingredients);
     if(ng.length>0){
       html+=`<div class="warn">⚠ NG食材: ${ng.join(",")}</div>`;
     }
 
     html+=`</div>`;
 
-    ingredients.forEach(i=>{
+    menu.ingredients.forEach(i=>{
       if(!stock.includes(i)){
         shopping.add(i);
       }
@@ -165,16 +125,19 @@ function generate(){
   shopping.forEach(i=>{
     html+=`・${i}<br>`;
   });
-  html+=`</div>`;
+  html+=`<br><strong>合計目安：${total}円</strong>`;
 
   if(budget){
-    html+=`<p class="small">※ 目安予算 ${budget}円</p>`;
+    if(total>budget){
+      html+=`<div class="warn">⚠ 完全には収まりませんでした</div>`;
+    } else {
+      html+=`<div style="color:green;">✔ 予算内に自動調整済み</div>`;
+    }
   }
+
+  html+=`</div>`;
 
   document.getElementById("result").innerHTML=html;
 }
 
 </script>
-
-</body>
-</html>
